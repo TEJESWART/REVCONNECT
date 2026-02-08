@@ -51,45 +51,77 @@ Clone the repository:
 
 🧱 Project Architecture
 
-Below is the visual representation of your workspace:
-REVCONNECT
-├── src/
-│   ├── com.controller/
-│   │   └── App.java                # Main Dashboard & Menu Logic
-│   ├── com.dao/                    # Database CRUD Operations
-│   │   ├── InteractionDAO.java
-│   │   ├── NetworkDAO.java
-│   │   ├── PostDAO.java
-│   │   └── UserDAO.java
-│   ├── com.model/                  # Data Entities (POJOs)
-│   │   ├── Comment.java
-│   │   ├── Likes.java
-│   │   ├── Post.java
-│   │   └── User.java
-│   ├── com.service/                # Business & Security Logic
-│   │   ├── AuthService.java
-│   │   ├── InteractionService.java
-│   │   ├── NetworkService.java
-│   │   ├── NotificationService.java
-│   │   └── PostService.java
-│   ├── com.util/
-│   │   └── ConnectionFactory.java  # JDBC Connection Management
-│   └── log4j2.xml                  # Logging Configuration
-├── test/                           # Automated JUnit 5 Tests
-│   ├── com.model/
-│   │   └── UserTest.java
-│   └── com.service/
-│       ├── AllTestsSuite.java
-│       ├── AuthServiceTest.java
-│       ├── InteractionServiceTest.java
-│       └── NetworkServiceTest.java
-├── Docs/                           # Project Documentation
-│   ├── Architecture.md
-│   ├── ERD.md
-│   └── ERD_PUML.md
-├── pom.xml                         # Maven Dependencies
-├── README.md                       # Project Overview
-└── schema.sql                      # Database Table Definitions
+Revshop
+|── src/
+   ├── main/
+   │   ├── java/
+   │   │   └── com/
+   │   │       └── revshop/
+   │   │           ├── app/
+   │   │           │   └── RevShopApplication.java
+   │   │           │
+   │   │           ├── config/
+   │   │           │   └── DBConfig.java
+   │   │           │
+   │   │           ├── dao/
+   │   │           │   ├── FavoriteDao.java
+   │   │           │   ├── FavoriteDaoImpl.java
+   │   │           │   ├── OrderDao.java
+   │   │           │   ├── OrderDaoImpl.java
+   │   │           │   ├── OrderItemDao.java
+   │   │           │   ├── OrderItemDaoImpl.java
+   │   │           │   ├── ProductDao.java
+   │   │           │   ├── ProductDaoImpl.java
+   │   │           │   ├── ReviewDao.java
+   │   │           │   ├── ReviewDaoImpl.java
+   │   │           │   ├── UserDao.java
+   │   │           │   └── UserDaoImpl.java
+   │   │           │
+   │   │           ├── exception/
+   │   │           │   ├── CartEmptyException.java
+   │   │           │   ├── InsufficientStockException.java
+   │   │           │   ├── PaymentFailedException.java
+   │   │           │   └── ProductNotFoundException.java
+   │   │           │
+   │   │           ├── model/
+   │   │           │   ├── CartItem.java
+   │   │           │   ├── Favorite.java
+   │   │           │   ├── Order.java
+   │   │           │   ├── OrderItem.java
+   │   │           │   ├── Product.java
+   │   │           │   ├── Review.java
+   │   │           │   └── User.java
+   │   │           │
+   │   │           ├── notification/
+   │   │           │   └── NotificationService.java
+   │   │           │
+   │   │           ├── service/
+   │   │           │   ├── CartService.java
+   │   │           │   ├── FavoriteService.java
+   │   │           │   ├── OrderService.java
+   │   │           │   ├── PaymentService.java
+   │   │           │   ├── ProductService.java
+   │   │           │   ├── ReviewService.java
+   │   │           │   └── UserService.java
+   │   │           │
+   │   │           └── util/
+   │   │               ├── DBConnectionUtil.java
+   │   │               └── PasswordUtil.java
+   │   │
+   │   └── resources/
+   │       └── log4j2.xml
+   │
+   └── test/
+       └── java/
+           └── com/
+               └── revshop/
+                   └── service/
+                       ├── CartServiceTest.java
+                       └── UserServiceTest.java
+
+✔ Clean separation of concerns
+✔ Industry-standard layered design
+✔ Easy migration to Spring Boot / REST APIs
 
 Bash
 git clone [https://github.com/yourusername/RevConnect.git](https://github.com/yourusername/RevConnect.git)
