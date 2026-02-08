@@ -1,5 +1,3 @@
-README.md
-Markdown
 # RevConnect 🌐
 **A Secure, Scalable Social Media Backend Engine**
 
