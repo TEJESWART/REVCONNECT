@@ -49,6 +49,48 @@ src/com/
 ⚙️ Setup & Installation
 Clone the repository:
 
+🧱 Project Architecture
+
+Below is the visual representation of your workspace:
+REVCONNECT
+├── src/
+│   ├── com.controller/
+│   │   └── App.java                # Main Dashboard & Menu Logic
+│   ├── com.dao/                    # Database CRUD Operations
+│   │   ├── InteractionDAO.java
+│   │   ├── NetworkDAO.java
+│   │   ├── PostDAO.java
+│   │   └── UserDAO.java
+│   ├── com.model/                  # Data Entities (POJOs)
+│   │   ├── Comment.java
+│   │   ├── Likes.java
+│   │   ├── Post.java
+│   │   └── User.java
+│   ├── com.service/                # Business & Security Logic
+│   │   ├── AuthService.java
+│   │   ├── InteractionService.java
+│   │   ├── NetworkService.java
+│   │   ├── NotificationService.java
+│   │   └── PostService.java
+│   ├── com.util/
+│   │   └── ConnectionFactory.java  # JDBC Connection Management
+│   └── log4j2.xml                  # Logging Configuration
+├── test/                           # Automated JUnit 5 Tests
+│   ├── com.model/
+│   │   └── UserTest.java
+│   └── com.service/
+│       ├── AllTestsSuite.java
+│       ├── AuthServiceTest.java
+│       ├── InteractionServiceTest.java
+│       └── NetworkServiceTest.java
+├── Docs/                           # Project Documentation
+│   ├── Architecture.md
+│   ├── ERD.md
+│   └── ERD_PUML.md
+├── pom.xml                         # Maven Dependencies
+├── README.md                       # Project Overview
+└── schema.sql                      # Database Table Definitions
+
 Bash
 git clone [https://github.com/yourusername/RevConnect.git](https://github.com/yourusername/RevConnect.git)
 Database Setup:
