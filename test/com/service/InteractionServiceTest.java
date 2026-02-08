@@ -7,37 +7,40 @@ import org.junit.jupiter.api.BeforeEach;
 public class InteractionServiceTest {
     private InteractionService interactionService = new InteractionService();
     private PostService postService = new PostService();
-    private int testPostId = 1; // Default ID to use for testing
+    private int testUserId = 1;
+    private int dynamicPostId; // Stores the ID from the database
 
     @BeforeEach
     public void setup() {
-        // This runs BEFORE every test method.
-        // It ensures at least one post exists in the DB to avoid Foreign Key errors.
-        postService.addNewPost(1, "Automated Test Post for Interactions");
+        // Create a real post in the DB and capture its unique ID
+        dynamicPostId = postService.createTestPost(testUserId, "Real Post for testing");
         
-        // Note: In a real DB, you'd ideally fetch the generated ID, 
-        // but for a console project, using a known existing ID (like 1) works well.
+        // Safety check: if DB fails, don't run the tests
+        assertTrue(dynamicPostId > 0, "Post creation failed, cannot proceed with interaction tests.");
     }
 
     @Test
     public void testLikeLogic() {
-        // Verifies Option 8: Like
-        String result = interactionService.likePost(1, testPostId);
-        assertNotNull(result, "Liking should return a status update.");
+        // Use the ID generated in setup()
+        String result = interactionService.likePost(testUserId, dynamicPostId);
+        assertNotNull(result);
+        assertTrue(result.contains("Liked") || result.contains("Could not"));
     }
 
     @Test
     public void testCommentLogic() {
-        // Verifies Option 9: Comment
-        // Now it uses the testPostId which we ensured exists in setup()
-        String result = interactionService.commentOnPost(1, testPostId, "Test comment");
-        assertNotNull(result, "Commenting should return a confirmation.");
+        // Use the ID generated in setup()
+        String result = interactionService.commentOnPost(testUserId, dynamicPostId, "Test comment");
+        assertNotNull(result);
+        assertTrue(result.contains("added"));
     }
 
     @Test
     public void testCommentRemoval() {
-        // Verifies Option 14: Delete Comment
-        String result = interactionService.removeComment(500, 1);
-        assertTrue(result.contains("Deleted") || result.contains("Error"));
+        // We still test the "Not Found" logic for ID 999 to ensure gracefull handling
+        String result = interactionService.removeComment(999, testUserId);
+        
+        assertTrue(result.contains("deleted") || result.contains("Notice") || result.contains("Success"), 
+            "The service should handle missing IDs gracefully.");
     }
 }

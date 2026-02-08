@@ -5,12 +5,39 @@ import java.util.ArrayList;
 import java.util.List;
 import com.model.User;
 import com.util.ConnectionFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Data Access Object for User-related database operations.
  * Handles Login, Registration, Following, and Suggestions.
  */
 public class UserDAO {
+    private static final Logger logger = LogManager.getLogger(UserDAO.class);
+
+    /**
+     * NEW METHOD: Option 3 Helper
+     * Fetches everyone EXCEPT the person currently logged in to show as suggestions.
+     */
+    public List<User> getAllUsersExcept(int currentUserId) {
+        List<User> users = new ArrayList<>();
+        String sql = "SELECT id, username, bio FROM users WHERE id != ?";
+        try (Connection conn = ConnectionFactory.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, currentUserId);
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                User u = new User();
+                u.setId(rs.getInt("id"));
+                u.setUsername(rs.getString("username"));
+                u.setBio(rs.getString("bio"));
+                users.add(u);
+            }
+        } catch (SQLException e) {
+            logger.error("Error in getAllUsersExcept: {}", e.getMessage());
+        }
+        return users;
+    }
 
     /**
      * 1. Fetch user by ID
@@ -25,14 +52,14 @@ public class UserDAO {
                 User u = new User();
                 u.setId(rs.getInt("id"));
                 u.setUsername(rs.getString("username"));
-                u.setEmail(rs.getString("email")); // Added missing email field
+                u.setEmail(rs.getString("email"));
                 u.setBio(rs.getString("bio"));
                 u.setUserType(rs.getString("user_type"));
-                u.setPassword(rs.getString("password")); // Added to prevent AuthService null errors
+                u.setPassword(rs.getString("password"));
                 return u;
             }
         } catch (SQLException e) { 
-            e.printStackTrace(); 
+            logger.error("Error fetching user by ID {}: {}", id, e.getMessage());
         }
         return null;
     }
@@ -51,7 +78,7 @@ public class UserDAO {
                 return getUserById(rs.getInt("id"));
             }
         } catch (SQLException e) { 
-            e.printStackTrace(); 
+            logger.error("Login Error: {}", e.getMessage());
         }
         return null;
     }
@@ -69,7 +96,7 @@ public class UserDAO {
             pstmt.setString(4, user.getUserType());
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) { 
-            System.err.println("Registration Error: " + e.getMessage());
+            logger.error("Registration Error: {}", e.getMessage());
             return false; 
         }
     }
@@ -85,7 +112,7 @@ public class UserDAO {
             pstmt.setInt(2, userId);
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) { 
-            e.printStackTrace(); 
+            logger.error("Update Bio Error: {}", e.getMessage());
             return false; 
         }
     }
@@ -100,7 +127,7 @@ public class UserDAO {
             pstmt.setInt(1, userId);
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) { 
-            e.printStackTrace(); 
+            logger.error("Delete User Error: {}", e.getMessage());
             return false; 
         }
     }
@@ -116,6 +143,7 @@ public class UserDAO {
             pstmt.setInt(2, targetId);
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) { 
+            logger.error("Follow Error: {}", e.getMessage());
             return false; 
         }
     }
@@ -131,7 +159,7 @@ public class UserDAO {
             ResultSet rs = pstmt.executeQuery();
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) { 
-            e.printStackTrace(); 
+            logger.error("Follower Count Error: {}", e.getMessage());
         }
         return 0;
     }
@@ -147,7 +175,7 @@ public class UserDAO {
             ResultSet rs = pstmt.executeQuery();
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) { 
-            e.printStackTrace(); 
+            logger.error("Following Count Error: {}", e.getMessage());
         }
         return 0;
     }
@@ -171,13 +199,13 @@ public class UserDAO {
                 users.add(u);
             }
         } catch (SQLException e) { 
-            e.printStackTrace(); 
+            logger.error("Search Users Error: {}", e.getMessage());
         }
         return users;
     }
 
     /**
-     * 10. Social Suggestions
+     * 10. Social Suggestions (Type-based)
      */
     public List<User> getSuggestions(int userId, String type) {
         List<User> suggestions = new ArrayList<>();
@@ -203,7 +231,7 @@ public class UserDAO {
                 suggestions.add(u);
             }
         } catch (SQLException e) { 
-            e.printStackTrace(); 
+            logger.error("Get Suggestions Error: {}", e.getMessage());
         }
         return suggestions;
     }

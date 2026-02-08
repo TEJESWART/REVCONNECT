@@ -3,17 +3,24 @@ package com.controller;
 import java.util.Scanner;
 import com.model.User;
 import com.service.*;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class App {
+    private static final Logger logger = LogManager.getLogger(App.class);
     private static Scanner sc = new Scanner(System.in);
+    
+    // Service initializations
     private static AuthService authService = new AuthService();
     private static PostService postService = new PostService();
     private static NetworkService networkService = new NetworkService();
     private static InteractionService interactionService = new InteractionService(); 
     private static NotificationService notificationService = new NotificationService();
+    
     private static User loggedInUser = null;
 
     public static void main(String[] args) {
+        logger.info("RevConnect Application Started.");
         System.out.println(">>> Starting RevConnect...");
         while (true) {
             if (loggedInUser == null) showLoggedOutMenu();
@@ -36,11 +43,7 @@ public class App {
                     
                     User newUser = new User(name, email, pass, type.toUpperCase());
                     String status = authService.register(newUser);
-                    if (status.equalsIgnoreCase("Success")) {
-                        System.out.println("Registration Successful! Please login.");
-                    } else {
-                        System.out.println("Registration failed: " + status);
-                    }
+                    System.out.println("Registration Status: " + status);
                     break;
                 case 2:
                     System.out.print("Username: "); String u = sc.nextLine();
@@ -53,6 +56,7 @@ public class App {
                     }
                     break;
                 case 3: 
+                    logger.info("User exited the application.");
                     System.out.println("Exiting RevConnect... Goodbye!");
                     System.exit(0);
             }
@@ -62,7 +66,6 @@ public class App {
     }
 
     private static void showLoggedInMenu() {
-        // --- FETCH UNREAD NOTIFICATIONS FOR ALERT ---
         int unread = notificationService.getUnreadCount(loggedInUser.getId());
         String alert = (unread > 0) ? " [" + unread + " NEW!]" : "";
 
@@ -95,7 +98,6 @@ public class App {
                     System.out.println("Bio:       " + (profileData.getBio() != null ? profileData.getBio() : "No bio set yet."));
                     System.out.println("Followers: " + networkService.getFollowerCount(profileData.getId()));
                     System.out.println("Following: " + networkService.getFollowingCount(profileData.getId()));
-                    System.out.println("Type:      " + profileData.getUserType());
                     break;
                 case 5:
                     System.out.print("Enter User ID to follow: ");
@@ -128,7 +130,8 @@ public class App {
                     break;
                 case 11:
                     System.out.print("Post ID to Delete: ");
-                    System.out.println(postService.removePost(Integer.parseInt(sc.nextLine()), loggedInUser.getId()));
+                    // Updated to match PostService.deletePost
+                    System.out.println(postService.deletePost(Integer.parseInt(sc.nextLine()), loggedInUser.getId()));
                     break;
                 case 12: 
                     loggedInUser = null; 
@@ -139,8 +142,6 @@ public class App {
                     if (sc.nextLine().equalsIgnoreCase("CONFIRM")) {
                         System.out.println(authService.deleteAccount(loggedInUser.getId()));
                         loggedInUser = null;
-                    } else {
-                        System.out.println("Account deletion cancelled.");
                     }
                     break;
                 case 14: 
@@ -155,7 +156,7 @@ public class App {
                     postService.showTrending();
                     break;
                 case 17:
-                    System.out.print("Enter hashtag to search: ");
+                    System.out.print("Enter hashtag (with #): ");
                     postService.discoverHashtags(sc.nextLine());
                     break;
                 case 18: 
@@ -168,18 +169,16 @@ public class App {
                     break;
                 case 20: 
                     System.out.print("Enter Post ID to save: ");
-                    int saveId = Integer.parseInt(sc.nextLine());
-                    System.out.println(postService.bookmarkPost(loggedInUser.getId(), saveId));
+                    System.out.println(postService.bookmarkPost(loggedInUser.getId(), Integer.parseInt(sc.nextLine())));
                     break;
                 case 21: 
                     postService.displaySavedPosts(loggedInUser.getId());
                     break;
-                 
                 default:
                     System.out.println("Selection out of range (1-21).");
             }
         } catch (NumberFormatException e) { 
-            System.out.println("Input Error: Please enter a valid numerical choice."); 
+            System.out.println("Error: Please enter a valid numerical ID."); 
         } catch (Exception e) {
             System.out.println("An unexpected error occurred: " + e.getMessage());
         }

@@ -5,8 +5,30 @@ import java.util.ArrayList;
 import java.util.List;
 import com.model.Comment;
 import com.util.ConnectionFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class InteractionDAO {
+    // 1. Initialize Logger for better error tracking
+    private static final Logger logger = LogManager.getLogger(InteractionDAO.class);
+
+    /**
+     * HELPER: Checks if a comment exists before attempting deletion.
+     * Required for InteractionService.removeComment logic.
+     */
+    public boolean commentExists(int commentId) {
+        String sql = "SELECT 1 FROM comments WHERE comment_id = ?";
+        try (Connection conn = ConnectionFactory.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, commentId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                return rs.next(); // Returns true if found
+            }
+        } catch (SQLException e) {
+            logger.error("Error checking comment existence for ID {}: {}", commentId, e.getMessage());
+            return false;
+        }
+    }
 
     /**
      * Option 8: Add Like + Trigger Notification
@@ -19,14 +41,15 @@ public class InteractionDAO {
             pstmt.setInt(2, postId);
             
             if (pstmt.executeUpdate() > 0) {
-                // Fetch post owner and notify them
                 int ownerId = getPostOwnerId(postId);
                 if (ownerId != -1 && ownerId != userId) { 
                     createNotification(ownerId, "User ID " + userId + " liked your post (Post ID: " + postId + ")");
                 }
                 return true;
             }
-        } catch (SQLException e) { e.printStackTrace(); }
+        } catch (SQLException e) { 
+            logger.error("SQL Error in addLike: {}", e.getMessage()); 
+        }
         return false;
     }
 
@@ -42,7 +65,6 @@ public class InteractionDAO {
             pstmt.setString(3, content);
             
             if (pstmt.executeUpdate() > 0) {
-                // Fetch post owner and notify them
                 int ownerId = getPostOwnerId(postId);
                 if (ownerId != -1 && ownerId != userId) {
                     createNotification(ownerId, "User ID " + userId + " commented: " + 
@@ -50,7 +72,9 @@ public class InteractionDAO {
                 }
                 return true;
             }
-        } catch (SQLException e) { e.printStackTrace(); }
+        } catch (SQLException e) { 
+            logger.error("SQL Error in addComment: {}", e.getMessage()); 
+        }
         return false;
     }
 
@@ -64,7 +88,9 @@ public class InteractionDAO {
             pstmt.setInt(1, targetUserId);
             pstmt.setString(2, message);
             pstmt.executeUpdate();
-        } catch (SQLException e) { e.printStackTrace(); }
+        } catch (SQLException e) { 
+            logger.error("Error creating notification: {}", e.getMessage()); 
+        }
     }
 
     /**
@@ -77,7 +103,9 @@ public class InteractionDAO {
             pstmt.setInt(1, postId);
             ResultSet rs = pstmt.executeQuery();
             if (rs.next()) return rs.getInt("user_id");
-        } catch (SQLException e) { e.printStackTrace(); }
+        } catch (SQLException e) { 
+            logger.error("Error fetching post owner: {}", e.getMessage()); 
+        }
         return -1;
     }
 
@@ -103,12 +131,14 @@ public class InteractionDAO {
                 comment.setUsername(rs.getString("username")); 
                 comments.add(comment);
             }
-        } catch (SQLException e) { e.printStackTrace(); }
+        } catch (SQLException e) { 
+            logger.error("Error fetching comments for post {}: {}", postId, e.getMessage()); 
+        }
         return comments;
     }
 
     /**
-     * Option 14: Delete Comment
+     * Option 14: Delete Comment (Checks ownership)
      */
     public boolean deleteComment(int commentId, int userId) {
         String sql = "DELETE FROM comments WHERE comment_id = ? AND user_id = ?";
@@ -117,6 +147,9 @@ public class InteractionDAO {
             pstmt.setInt(1, commentId);
             pstmt.setInt(2, userId);
             return pstmt.executeUpdate() > 0;
-        } catch (SQLException e) { e.printStackTrace(); return false; }
+        } catch (SQLException e) { 
+            logger.error("SQL Error in deleteComment: {}", e.getMessage()); 
+            return false; 
+        }
     }
 }
