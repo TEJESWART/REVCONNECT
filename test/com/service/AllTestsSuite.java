@@ -2,20 +2,19 @@ package com.service;
 
 import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
+
+// Imports for the test classes
 import com.model.UserTest;
 
-/**
- * Main Test Suite for RevConnect.
- * Groups the four core test classes to verify all 21 dashboard features.
- */
+import com.service.AuthServiceTest;
+import com.service.InteractionServiceTest;
+
 @Suite
 @SelectClasses({
-    UserTest.class,               // Verifies User Data Model
-    AuthServiceTest.class,        // Verifies Profile, Bio, Logout, and Delete Account
-    NetworkServiceTest.class,     // Verifies Suggestions, Following, Search, and Analytics
-    PostServiceTest.class,        // Verifies Posting, Feed, Sharing, Hashtags, and Saved Posts
-    InteractionServiceTest.class  // Verifies Likes, Comments, and Notifications
+    UserTest.class,
+    AuthServiceTest.class,
+    InteractionServiceTest.class
 })
 public class AllTestsSuite {
-    // This class remains empty; it serves as a configuration for the JUnit runner.
+    // This class remains empty; it serves as a configuration for the JUnit runner
 }

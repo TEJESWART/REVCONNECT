@@ -1,81 +1,103 @@
-
-
-## 📊 1. ERD (Entity Relationship Diagram)
+To align with the recent architectural enhancements—specifically the specialized **Business Account logic**, **Post Type categorization**, and **JUnit Suite integration**—the application architecture diagram and data flow must be updated to reflect these new "Gatekeeper" responsibilities.
 
 ---
 
-### 🏗️ Database Schema Visualization:
+## 🏛️ 2. UPDATED APPLICATION ARCHITECTURE DIAGRAM
 
----
+### 🧩 Layered Architecture – RevConnect (V2.0)
 
 ```text
-┌─────────────────────┐         ┌─────────────────────┐
-│        USERS        │         │        POSTS        │
-├─────────────────────┤         ├─────────────────────┤
-│ id (PK)             │◄────────┤ user_id (FK)        │
-│ username (UNIQUE)   │         │ post_id (PK)        │
-│ email (UNIQUE)      │         │ content             │
-│ password            │         │ parent_post_id (FK) │
-│ user_type (ENUM)    │         │ created_at          │
-│ bio                 │         └─────────┬───────────┘
-│ last_login          │                   │
-└──────────┬──────────┘                   │
-           │                              │
-           ▼                              ▼
-┌─────────────────────┐         ┌─────────────────────┐
-│      COMMENTS       │         │        LIKES        │
-├─────────────────────┤         ├─────────────────────┤
-│ comment_id (PK)     │         │ id (PK)             │
-│ post_id (FK)        │◄────────┤ post_id (FK)        │
-│ user_id (FK)        │◄────────┤ user_id (FK)        │
-│ content             │         └─────────────────────┘
-│ created_at          │
-└──────────┬──────────┘
-           │
-           ▼
-┌─────────────────────┐         ┌─────────────────────┐
-│       FOLLOWS       │         │    SAVED_POSTS      │
-├─────────────────────┤         ├─────────────────────┤
-│ id (PK)             │         │ id (PK)             │
-│ follower_id (FK)    │◄────────┤ user_id (FK)        │
-│ following_id (FK)   │         │ post_id (FK)        │
-│ status (ENUM)       │         │ saved_at            │
-└─────────────────────┘         └─────────────────────┘
-           │
-           ▼
-┌─────────────────────┐
-│    NOTIFICATIONS    │
-├─────────────────────┤
-│ id (PK)             │
-│ user_id (FK)        │
-│ message             │
-│ is_read             │
-│ created_at          │
-└─────────────────────┘
+┌──────────────────────────────────────────────────────────────────────┐
+│                       CONSOLE INTERFACE LAYER                        │
+├──────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│   ┌───────────────────────┐     ┌───────────────────────┐            │
+│   │ App.java              │     │   Menu Controllers    │            │
+│   │ (Main Entry Point)    │     │-----------------------│            │
+│   │                       │     │ • Standard User Menu  │            │
+│   │                       │     │ • Creator Tools       │            │
+│   │                       │     │ • BUSINESS Dashboard  │            │
+│   └───────────────────────┘     └───────────────────────┘            │
+│                                                                      │
+└───────────────────────────────┬──────────────────────────────────────┘
+                                │
+┌──────────────────────────────────────────────────────────────────────┐
+│                  SERVICE LAYER (Business Logic)                      │
+├──────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│   ┌───────────────────────┐   ┌────────────────────────┐             │
+│   │ AuthService           │   │ PostService            │             │
+│   │ • Account Type Logic  │   │ • Add / Delete Post    │             │
+│   │ • Profile Aliasing    │   │ • BUSINESS VALIDATION  │             │
+│   └───────────────────────┘   │ • Visual Feed Rendering │             │
+│                               └────────────────────────┘             │
+│                                                                      │
+│   ┌───────────────────────┐   ┌────────────────────────┐             │
+│   │ InteractionService    │   │ AllTestsSuite (JUnit)  │             │
+│   │ • Like / Comment      │   │ • PostServiceTest      │             │
+│   │ • Validation Logic    │   │ • User Model Test      │             │
+│   └───────────────────────┘   └────────────────────────┘             │
+│                                                                      │
+└───────────────────────────────┬──────────────────────────────────────┘
+                                │
+┌──────────────────────────────────────────────────────────────────────┐
+│                    DATA ACCESS LAYER (DAO)                           │
+├──────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│   ┌───────────────────────┐   ┌────────────────────────┐             │
+│   │ UserDAO               │   │ PostDAO                │             │
+│   │ • User CRUD           │   │ • PostType Persistence │             │
+│   │ • Business Profiles   │   │ • mapResultSetToPost() │             │
+│   └───────────────────────┘   └────────────────────────┘             │
+│                                                                      │
+└───────────────────────────────┬──────────────────────────────────────┘
+                                │
+┌──────────────────────────────────────────────────────────────────────┐
+│                    DATABASE LAYER (MySQL)                            │
+├──────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│                ┌────────────────────────────────┐                    │
+│                │      revconnect_db Schema      │                    │
+│                │--------------------------------│                    │
+│                │ • users (Added Category/Addr)  │                    │
+│                │ • posts (Added post_type col)  │                    │
+│                └────────────────────────────────┘                    │
+│                                                                      │
+└──────────────────────────────────────────────────────────────────────┘
 
 ```
 
 ---
 
-## 🔑 Relationships Summary
+### 🔄 UPDATED DATA FLOW (Business Workflow)
 
-| RELATIONSHIP | TYPE | DESCRIPTION |
-| --- | --- | --- |
-| **Users → Posts** | **1:N** | A user can create multiple posts. |
-| **Posts → Comments** | **1:N** | Each post can have multiple comments. |
-| **Users → Comments** | **1:N** | A user can write comments on many different posts. |
-| **Posts → Likes** | **1:N** | A post can be liked by many users. |
-| **Users → Follows** | **M:N** | Users can follow many others and be followed back (Self-referencing). |
-| **Posts → Posts** | **1:N** | Self-referencing relationship for shared/parent posts. |
-| **Users → Notifications** | **1:N** | Users receive multiple alerts for activity like new followers or likes. |
-| **Users → Saved Posts** | **1:N** | A user can bookmark multiple posts for their private collection. |
+The data flow now includes the **Type Validation** step which ensures Personal accounts cannot bypass Business restrictions.
+
+```text
+User Input (Choice: B2 - Promotion)
+    ↓
+Console Menus (Detects loggedInUser.getUserType() == "BUSINESS")
+    ↓
+PostService.postBusinessUpdate() 
+    ↓
+1. Validation Check (Content not empty?)
+2. Authorization Check (Is user actually a BUSINESS?)
+    ↓
+PostDAO.createBusinessPost() (Applies 'PROMOTION' type string)
+    ↓
+MySQL Database (Saved in post_type column)
+    ↑
+RenderFeed() (Applies $$$ Borders based on post_type)
+    ↑
+Formatted Success Feedback to User
+
+```
 
 ---
 
-### 🛠️ Technical Design Notes
+### 🏗️ RECENT TECHNICAL ENHANCEMENTS
 
-* **Data Integrity**: All foreign keys are set with `ON DELETE CASCADE`, meaning if a user is deleted, their posts, likes, and comments are automatically removed.
-* **Recursive Relationship**: The `follows` table is a self-referencing many-to-many relationship using two foreign keys pointing back to the `users` table.
-* **Security**: The `UNIQUE(user_id, post_id)` constraint on both `likes` and `saved_posts` prevents duplicate data entries and errors.
-* **Content Sharing**: The `parent_post_id` in the `posts` table allows for a tree-like structure, enabling users to share existing content while maintaining a link to the original post.
-
+* **Model-Service Synchronization**: Added the `getUserId()` alias in the **User Model** to ensure seamless connectivity between the Controller and Service layers without naming mismatch errors.
+* **Encapsulated Formatting**: Moved the visual logic (Announcement/Promotion borders) entirely into the `PostService.renderFeed()` method. This ensures that the DAO only handles raw data, while the Service handles the "User Experience."
+* **Test-Driven Reliability**: Integrated the `AllTestsSuite` to run localized logic tests. This verifies that the "Gatekeeper" logic (blocking Personal users from Business tools) works even if the database is offline.
+* **Database Normalization**: Updated the `PostDAO` to use a `mapResultSetToPost()` helper method, ensuring that any new columns added to MySQL (like `post_type`) are automatically populated across all feed types (Global, Personal, and Saved).

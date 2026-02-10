@@ -1,20 +1,22 @@
+To align with the recent architectural enhancements—specifically the specialized **Business Account logic**, **Post Type categorization**, and **JUnit Suite integration**—the application architecture diagram and data flow must be updated to reflect these new "Gatekeeper" responsibilities.
 
-## 🏛️ 2. APPLICATION ARCHITECTURE DIAGRAM
+---
 
-### 🧩 Layered Architecture – RevConnect
+## 🏛️ 2. UPDATED APPLICATION ARCHITECTURE DIAGRAM
+
+### 🧩 Layered Architecture – RevConnect (V2.0)
 
 ```text
-
 ┌──────────────────────────────────────────────────────────────────────┐
-│                      CONSOLE INTERFACE LAYER                         │
+│                       CONSOLE INTERFACE LAYER                        │
 ├──────────────────────────────────────────────────────────────────────┤
 │                                                                      │
 │   ┌───────────────────────┐     ┌───────────────────────┐            │
 │   │ App.java              │     │   Menu Controllers    │            │
 │   │ (Main Entry Point)    │     │-----------------------│            │
-│   │                       │     │  • User Dashboard     │            │
-│   │                       │     │  • Post / Feed Menu   │            │
-│   │                       │     │  • Interaction Menu   │            │
+│   │                       │     │ • Standard User Menu  │            │
+│   │                       │     │ • Creator Tools       │            │
+│   │                       │     │ • BUSINESS Dashboard  │            │
 │   └───────────────────────┘     └───────────────────────┘            │
 │                                                                      │
 └───────────────────────────────┬──────────────────────────────────────┘
@@ -25,54 +27,28 @@
 │                                                                      │
 │   ┌───────────────────────┐   ┌────────────────────────┐             │
 │   │ AuthService           │   │ PostService            │             │
-│   │ • Register / Login    │   │ • Add / Delete Post    │             │
-│   │ • Session Management  │   │ • Hashtag Parsing      │             │
-│   └───────────────────────┘   └────────────────────────┘             │
+│   │ • Account Type Logic  │   │ • Add / Delete Post    │             │
+│   │ • Profile Aliasing    │   │ • BUSINESS VALIDATION  │             │
+│   └───────────────────────┘   │ • Visual Feed Rendering │             │
+│                               └────────────────────────┘             │
 │                                                                      │
 │   ┌───────────────────────┐   ┌────────────────────────┐             │
-│   │ InteractionService    │   │ NetworkService         │             │
-│   │ • Like / Comment      │   │ • Follow / Unfollow    │             │
-│   │ • Ownership Checks    │   │ • User Suggestions     │             │
+│   │ InteractionService    │   │ AllTestsSuite (JUnit)  │             │
+│   │ • Like / Comment      │   │ • PostServiceTest      │             │
+│   │ • Validation Logic    │   │ • User Model Test      │             │
 │   └───────────────────────┘   └────────────────────────┘             │
-│                                                                      │
-│   ┌──────────────────────────────────────────────┐                   │
-│   │ NotificationService                          │                   │
-│   │ • Activity Alerts (Likes/Comments)           │                   │
-│   │ • Notification History                       │                   │
-│   └──────────────────────────────────────────────┘                   │
 │                                                                      │
 └───────────────────────────────┬──────────────────────────────────────┘
                                 │
 ┌──────────────────────────────────────────────────────────────────────┐
-│                   DATA ACCESS LAYER (DAO)                            │
+│                    DATA ACCESS LAYER (DAO)                           │
 ├──────────────────────────────────────────────────────────────────────┤
 │                                                                      │
 │   ┌───────────────────────┐   ┌────────────────────────┐             │
 │   │ UserDAO               │   │ PostDAO                │             │
-│   │ • User CRUD           │   │ • Post CRUD            │             │
+│   │ • User CRUD           │   │ • PostType Persistence │             │
+│   │ • Business Profiles   │   │ • mapResultSetToPost() │             │
 │   └───────────────────────┘   └────────────────────────┘             │
-│                                                                      │
-│   ┌───────────────────────┐   ┌────────────────────────┐             │
-│   │ InteractionDAO        │   │ NetworkDAO             │             │
-│   │ • Likes / Comments    │   │ • Follow Relationships │             │
-│   └───────────────────────┘   └────────────────────────┘             │
-│                                                                      │
-│   ┌───────────────────────┐                                          │
-│   │ NotificationDAO       │                                          │
-│   │ • Alert Persistence   │                                          │
-│   └───────────────────────┘                                          │
-│                                                                      │
-└───────────────────────────────┬──────────────────────────────────────┘
-                                │
-┌──────────────────────────────────────────────────────────────────────┐
-│                    MODEL LAYER (Entities)                            │
-├──────────────────────────────────────────────────────────────────────┤
-│                                                                      │
-│   User        Post        Comment        Likes                       │
-│   Notification            Follow         Analytics                   │
-│                                                                      │
-│   • Plain Java Objects (POJOs)                                       │
-│   • Data Encapsulation (Getters/Setters)                             │
 │                                                                      │
 └───────────────────────────────┬──────────────────────────────────────┘
                                 │
@@ -80,61 +56,50 @@
 │                    DATABASE LAYER (MySQL)                            │
 ├──────────────────────────────────────────────────────────────────────┤
 │                                                                      │
-│               ┌────────────────────────────────┐                     │
-│               │          MySQL 8.0+            │                     │
-│               │      revconnect_db Database    │                     │
-│               │--------------------------------│                     │
-│               │  • users                       │                     │
-│               │  • posts                       │                     │
-│               │  • comments                    │                     │
-│               │  • likes                       │                     │
-│               │  • follows                     │                     │
-│               │  • notifications               │                     │
-│               └────────────────────────────────┘                     │
+│                ┌────────────────────────────────┐                    │
+│                │      revconnect_db Schema      │                    │
+│                │--------------------------------│                    │
+│                │ • users (Added Category/Addr)  │                    │
+│                │ • posts (Added post_type col)  │                    │
+│                └────────────────────────────────┘                    │
 │                                                                      │
 └──────────────────────────────────────────────────────────────────────┘
 
+```
+
+---
+
+### 🔄 UPDATED DATA FLOW (Business Workflow)
+
+The data flow now includes the **Type Validation** step which ensures Personal accounts cannot bypass Business restrictions.
+
+```text
+User Input (Choice: B2 - Promotion)
+    ↓
+Console Menus (Detects loggedInUser.getUserType() == "BUSINESS")
+    ↓
+PostService.postBusinessUpdate() 
+    ↓
+1. Validation Check (Content not empty?)
+2. Authorization Check (Is user actually a BUSINESS?)
+    ↓
+PostDAO.createBusinessPost() (Applies 'PROMOTION' type string)
+    ↓
+MySQL Database (Saved in post_type column)
+    ↑
+RenderFeed() (Applies $$$ Borders based on post_type)
+    ↑
+Formatted Success Feedback to User
 
 ```
 
 ---
 
-### 🔄 DATA FLOW
+### 🏗️ RECENT TECHNICAL ENHANCEMENTS
 
-```text
-User Input
-   ↓
-Console Menus (App.java)
-   ↓
-Service Layer (Security Checks & Ownership Validation)
-   ↓
-DAO Layer (JDBC PreparedStatements)
-   ↓
-MySQL Database
-   ↑
-Formatted Success/Error Feedback back to User
+* **Model-Service Synchronization**: Added the `getUserId()` alias in the **User Model** to ensure seamless connectivity between the Controller and Service layers without naming mismatch errors.
+* **Encapsulated Formatting**: Moved the visual logic (Announcement/Promotion borders) entirely into the `PostService.renderFeed()` method. This ensures that the DAO only handles raw data, while the Service handles the "User Experience."
+* **Test-Driven Reliability**: Integrated the `AllTestsSuite` to run localized logic tests. This verifies that the "Gatekeeper" logic (blocking Personal users from Business tools) works even if the database is offline.
+* **Database Normalization**: Updated the `PostDAO` to use a `mapResultSetToPost()` helper method, ensuring that any new columns added to MySQL (like `post_type`) are automatically populated across all feed types (Global, Personal, and Saved).
 
-```
-
----
-
-### 🏗️ DEPENDENCY FLOW (Strict)
-
-```text
-App.java
-   ↓
-Service Layer (e.g., PostService)
-   ↓
-DAO Layer (e.g., PostDAO)
-   ↓
-ConnectionFactory
-   ↓
-MySQL (revconnect_db)
-
-```
-
-### **Technical Breakdown:**
-
-* **Decoupled Architecture**: By using the Service Layer, your **App.java** never talks to the database directly, ensuring that the console UI can be swapped for a web UI easily later.
-* **Security Barrier**: The Service layer acts as the "Gatekeeper," performing the ownership checks (ensuring users only delete their own posts) before ever hitting the DAO.
-* **JDBC Management**: All database connectivity is centralized in the `ConnectionFactory` to prevent memory leaks and handle SQL exceptions gracefully.
+**Would you like me to generate a new `Project_Structure_Final.txt` that lists exactly which files are in which folders to help you clean up your workspace?**

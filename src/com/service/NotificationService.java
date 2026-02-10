@@ -1,75 +1,49 @@
 package com.service;
 
-import java.sql.*;
-import com.util.ConnectionFactory;
+import com.dao.NotificationDAO;
+import com.model.Notification;
+import java.util.List;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class NotificationService {
+    // 1. Initialize Logger for consistency with other services
+    private static final Logger logger = LogManager.getLogger(NotificationService.class);
     
-    /**
-     * Fetches and displays all notifications for the user.
-     * Automatically marks them as 'read' after they are shown.
-     */
-    public void showNotifications(int userId) {
-        String sql = "SELECT message, created_at FROM notifications WHERE user_id = ? ORDER BY created_at DESC";
-        try (Connection conn = ConnectionFactory.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            
-            pstmt.setInt(1, userId);
-            ResultSet rs = pstmt.executeQuery();
-            
-            System.out.println("\n--- YOUR NOTIFICATIONS ---");
-            boolean hasNotes = false;
-            while (rs.next()) {
-                hasNotes = true;
-                System.out.println("[" + rs.getTimestamp("created_at") + "] " + rs.getString("message"));
-            }
-            
-            if (!hasNotes) {
-                System.out.println("No notifications found.");
-            } else {
-                // Once viewed, mark all as read so the dashboard count resets
-                markAsRead(userId);
-            }
-            
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
+    // 2. Delegate data access to the DAO
+    private NotificationDAO notificationDAO = new NotificationDAO();
 
     /**
+     * Used for the Dashboard alert: "[3 NEW!]"
      * Returns the number of notifications that have not been viewed yet.
-     * Use this in App.java to show an alert like "DASHBOARD (3 NEW!)"
      */
     public int getUnreadCount(int userId) {
-        String sql = "SELECT COUNT(*) FROM notifications WHERE user_id = ? AND is_read = FALSE";
-        try (Connection conn = ConnectionFactory.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            
-            pstmt.setInt(1, userId);
-            ResultSet rs = pstmt.executeQuery();
-            
-            if (rs.next()) {
-                return rs.getInt(1);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return 0;
+        logger.info("Checking unread notifications for User ID: {}", userId);
+        return notificationDAO.getUnreadCount(userId);
     }
 
     /**
-     * Internal helper to update notification status in the database.
+     * Displays all notifications and marks them as read
+     * Fetches the list from the DAO and prints them to the console.
      */
-    private void markAsRead(int userId) {
-        String sql = "UPDATE notifications SET is_read = TRUE WHERE user_id = ?";
-        try (Connection conn = ConnectionFactory.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    public void showNotifications(int userId) {
+        logger.info("Fetching and displaying notifications for User ID: {}", userId);
+        List<Notification> list = notificationDAO.getNotificationsForUser(userId);
+        
+        if (list == null || list.isEmpty()) {
+            System.out.println("No new notifications found.");
+        } else {
+            System.out.println("\n--- 🔔 YOUR NOTIFICATIONS ---");
+            for (Notification n : list) {
+                // Display timestamp and message for a professional look
+                System.out.println("-> [" + n.getCreatedAt() + "] " + n.getMessage());
+            }
             
-            pstmt.setInt(1, userId);
-            pstmt.executeUpdate();
-            
-        } catch (SQLException e) {
-            e.printStackTrace();
+            // Once viewed, mark them as read in the DB so the dashboard count resets
+            boolean marked = notificationDAO.markAsRead(userId);
+            if (marked) {
+                logger.info("Notifications marked as read for User ID: {}", userId);
+            }
         }
     }
 }

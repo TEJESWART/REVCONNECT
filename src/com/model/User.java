@@ -7,12 +7,18 @@ public class User {
     private String username;
     private String email;
     private String password;
-    private String userType;
+    private String userType; // PERSONAL, CREATOR, or BUSINESS
     private String bio;
     private Timestamp lastLogin;
-    private int followerCount; // Added to support the Profile view logic
+    private int followerCount;
 
-    // Default Constructor
+    // --- Business Specific Fields ---
+    private String category;
+    private String address;
+    private String website;
+    private String hours;
+
+    // Constructors
     public User() {}
 
     // Constructor for Registration
@@ -23,35 +29,41 @@ public class User {
         this.userType = userType;
     }
 
-    // ID Getters & Setters
+    // Standard Getters and Setters
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
 
-    // Username Getters & Setters
     public String getUsername() { return username; }
     public void setUsername(String username) { this.username = username; }
 
-    // Email Getters & Setters
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
 
-    // Password Getters & Setters
     public String getPassword() { return password; }
     public void setPassword(String password) { this.password = password; }
 
-    // UserType Getters & Setters
     public String getUserType() { return userType; }
     public void setUserType(String userType) { this.userType = userType; }
 
-    // Bio Getters & Setters
     public String getBio() { return bio; }
     public void setBio(String bio) { this.bio = bio; }
 
-    // Timestamp Getters & Setters
     public Timestamp getLastLogin() { return lastLogin; }
     public void setLastLogin(Timestamp lastLogin) { this.lastLogin = lastLogin; }
 
-    // Follower Count Getters & Setters
     public int getFollowerCount() { return followerCount; }
     public void setFollowerCount(int followerCount) { this.followerCount = followerCount; }
+
+    // Business Getters and Setters
+    public String getCategory() { return category; }
+    public void setCategory(String category) { this.category = category; }
+
+    public String getAddress() { return address; }
+    public void setAddress(String address) { this.address = address; }
+
+    public String getWebsite() { return website; }
+    public void setWebsite(String website) { this.website = website; }
+
+    public String getHours() { return hours; }
+    public void setHours(String hours) { this.hours = hours; }
 }

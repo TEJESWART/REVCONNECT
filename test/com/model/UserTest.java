@@ -3,18 +3,23 @@ package com.model;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 
+// If this line stays red after the Maven update, 
+// the test folder isn't seeing the src folder.
+import com.model.User; 
+
 public class UserTest {
 
     @Test
-    public void testUserBio() {
-        // 1. Setup the user
+    public void testUserProperties() {
         User user = new User();
-        
-        // 2. Set a bio
-        String myBio = "Software Engineering Student";
-        user.setBio(myBio);
-        
-        // 3. Check if the bio we "get" is the same one we "set"
-        assertEquals(myBio, user.getBio(), "The bio should match what was set!");
+        user.setUsername("test_user");
+        user.setBio("Software Engineer");
+        user.setUserType("BUSINESS");
+
+        assertAll("Verify User Model State",
+            () -> assertEquals("test_user", user.getUsername()),
+            () -> assertEquals("Software Engineer", user.getBio()),
+            () -> assertEquals("BUSINESS", user.getUserType())
+        );
     }
 }

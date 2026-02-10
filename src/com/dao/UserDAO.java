@@ -10,62 +10,87 @@ import org.apache.logging.log4j.Logger;
 
 /**
  * Data Access Object for User-related database operations.
- * Handles Login, Registration, Following, and Suggestions.
+ * Handles Login, Registration, Following, and Enhanced Business Profiles.
  */
 public class UserDAO {
     private static final Logger logger = LogManager.getLogger(UserDAO.class);
 
     /**
-     * NEW METHOD: Option 3 Helper
-     * Fetches everyone EXCEPT the person currently logged in to show as suggestions.
+     * Register Business Account (Transaction-Based)
      */
-    public List<User> getAllUsersExcept(int currentUserId) {
-        List<User> users = new ArrayList<>();
-        String sql = "SELECT id, username, bio FROM users WHERE id != ?";
-        try (Connection conn = ConnectionFactory.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, currentUserId);
-            ResultSet rs = pstmt.executeQuery();
-            while (rs.next()) {
-                User u = new User();
-                u.setId(rs.getInt("id"));
-                u.setUsername(rs.getString("username"));
-                u.setBio(rs.getString("bio"));
-                users.add(u);
-            }
-        } catch (SQLException e) {
-            logger.error("Error in getAllUsersExcept: {}", e.getMessage());
-        }
-        return users;
-    }
+    public boolean registerBusinessAccount(User user, String cat, String addr, String web, String hours) {
+        String userSql = "INSERT INTO users (username, email, password, user_type) VALUES (?, ?, ?, ?)";
+        String bizSql = "INSERT INTO business_profiles (user_id, category, address, website_url, business_hours) VALUES (?, ?, ?, ?, ?)";
+        
+        Connection conn = null;
+        try {
+            conn = ConnectionFactory.getConnection();
+            conn.setAutoCommit(false); 
 
-    /**
-     * 1. Fetch user by ID
-     */
-    public User getUserById(int id) {
-        String sql = "SELECT * FROM users WHERE id = ?";
-        try (Connection conn = ConnectionFactory.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, id);
-            ResultSet rs = pstmt.executeQuery();
+            PreparedStatement pstmt1 = conn.prepareStatement(userSql, Statement.RETURN_GENERATED_KEYS);
+            pstmt1.setString(1, user.getUsername());
+            pstmt1.setString(2, user.getEmail());
+            pstmt1.setString(3, user.getPassword());
+            pstmt1.setString(4, "BUSINESS");
+            pstmt1.executeUpdate();
+
+            ResultSet rs = pstmt1.getGeneratedKeys();
             if (rs.next()) {
-                User u = new User();
-                u.setId(rs.getInt("id"));
-                u.setUsername(rs.getString("username"));
-                u.setEmail(rs.getString("email"));
-                u.setBio(rs.getString("bio"));
-                u.setUserType(rs.getString("user_type"));
-                u.setPassword(rs.getString("password"));
-                return u;
+                int newUserId = rs.getInt(1);
+
+                PreparedStatement pstmt2 = conn.prepareStatement(bizSql);
+                pstmt2.setInt(1, newUserId);
+                pstmt2.setString(2, cat);
+                pstmt2.setString(3, addr);
+                pstmt2.setString(4, web);
+                pstmt2.setString(5, hours);
+                pstmt2.executeUpdate();
             }
-        } catch (SQLException e) { 
-            logger.error("Error fetching user by ID {}: {}", id, e.getMessage());
+
+            conn.commit(); 
+            logger.info("Business account for {} registered successfully.", user.getUsername());
+            return true;
+
+        } catch (SQLException e) {
+            if (conn != null) {
+                try {
+                    conn.rollback(); 
+                    logger.warn("Transaction Rolled Back: Business registration failed.");
+                } catch (SQLException ex) {
+                    logger.error("Rollback Error: {}", ex.getMessage());
+                }
+            }
+            logger.error("Registration Error: {}", e.getMessage());
+            return false;
+        } finally {
+            if (conn != null) {
+                try { conn.setAutoCommit(true); } catch (SQLException e) { }
+            }
         }
-        return null;
     }
 
     /**
-     * 2. Login Logic
+     * Standard Registration Logic
+     */
+    public boolean registerUser(User user) {
+        String sql = "INSERT INTO users (username, email, password, user_type) VALUES (?, ?, ?, ?)";
+        try (Connection conn = ConnectionFactory.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            pstmt.setString(1, user.getUsername());
+            pstmt.setString(2, user.getEmail());
+            pstmt.setString(3, user.getPassword());
+            pstmt.setString(4, user.getUserType().toUpperCase());
+            
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) { 
+            logger.error("Registration Error: {}", e.getMessage());
+            return false; 
+        }
+    }
+
+    /**
+     * Login Logic
      */
     public User login(String username, String password) {
         String sql = "SELECT id FROM users WHERE username = ? AND password = ?";
@@ -84,25 +109,45 @@ public class UserDAO {
     }
 
     /**
-     * 3. Register Logic
+     * 1. Fetch user by ID - UPDATED WITH LEFT JOIN
+     * Now retrieves standard info AND business details if they exist.
      */
-    public boolean registerUser(User user) {
-        String sql = "INSERT INTO users (username, email, password, user_type) VALUES (?, ?, ?, ?)";
+    public User getUserById(int id) {
+        String sql = "SELECT u.*, b.category, b.address, b.website_url, b.business_hours " +
+                     "FROM users u " +
+                     "LEFT JOIN business_profiles b ON u.id = b.user_id " +
+                     "WHERE u.id = ?";
+        
         try (Connection conn = ConnectionFactory.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, user.getUsername());
-            pstmt.setString(2, user.getEmail());
-            pstmt.setString(3, user.getPassword());
-            pstmt.setString(4, user.getUserType());
-            return pstmt.executeUpdate() > 0;
+            pstmt.setInt(1, id);
+            ResultSet rs = pstmt.executeQuery();
+            
+            if (rs.next()) {
+                User u = new User();
+                u.setId(rs.getInt("id"));
+                u.setUsername(rs.getString("username"));
+                u.setEmail(rs.getString("email"));
+                u.setBio(rs.getString("bio"));
+                u.setUserType(rs.getString("user_type"));
+                u.setPassword(rs.getString("password"));
+                
+                // Note: Ensure your User.java model has these fields and setters:
+                u.setCategory(rs.getString("category"));
+                u.setAddress(rs.getString("address"));
+                u.setWebsite(rs.getString("website_url"));
+                u.setHours(rs.getString("business_hours"));
+                
+                return u;
+            }
         } catch (SQLException e) { 
-            logger.error("Registration Error: {}", e.getMessage());
-            return false; 
+            logger.error("Error fetching profile for ID {}: {}", id, e.getMessage()); 
         }
+        return null;
     }
 
     /**
-     * 4. Update Bio
+     * 4. Edit Bio
      */
     public boolean updateBio(int userId, String bio) {
         String sql = "UPDATE users SET bio = ? WHERE id = ?";
@@ -118,7 +163,7 @@ public class UserDAO {
     }
 
     /**
-     * 5. Delete User
+     * 5. DELETE ACCT
      */
     public boolean deleteUser(int userId) {
         String sql = "DELETE FROM users WHERE id = ?";
@@ -188,8 +233,10 @@ public class UserDAO {
         String sql = "SELECT id, username, user_type FROM users WHERE username LIKE ? AND id != ?";
         try (Connection conn = ConnectionFactory.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
             pstmt.setString(1, "%" + query + "%");
             pstmt.setInt(2, excludeId);
+            
             ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {
                 User u = new User();
@@ -205,7 +252,30 @@ public class UserDAO {
     }
 
     /**
-     * 10. Social Suggestions (Type-based)
+     * Suggestions Helper
+     */
+    public List<User> getAllUsersExcept(int currentUserId) {
+        List<User> users = new ArrayList<>();
+        String sql = "SELECT id, username, bio FROM users WHERE id != ?";
+        try (Connection conn = ConnectionFactory.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, currentUserId);
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                User u = new User();
+                u.setId(rs.getInt("id"));
+                u.setUsername(rs.getString("username"));
+                u.setBio(rs.getString("bio"));
+                users.add(u);
+            }
+        } catch (SQLException e) {
+            logger.error("Error in getAllUsersExcept: {}", e.getMessage());
+        }
+        return users;
+    }
+
+    /**
+     * 10. Social Suggestions
      */
     public List<User> getSuggestions(int userId, String type) {
         List<User> suggestions = new ArrayList<>();

@@ -9,12 +9,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class InteractionDAO {
-    // 1. Initialize Logger for better error tracking
     private static final Logger logger = LogManager.getLogger(InteractionDAO.class);
 
     /**
-     * HELPER: Checks if a comment exists before attempting deletion.
-     * Required for InteractionService.removeComment logic.
+     * Checks if a comment exists before attempting deletion.
      */
     public boolean commentExists(int commentId) {
         String sql = "SELECT 1 FROM comments WHERE comment_id = ?";
@@ -22,7 +20,7 @@ public class InteractionDAO {
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, commentId);
             try (ResultSet rs = pstmt.executeQuery()) {
-                return rs.next(); // Returns true if found
+                return rs.next();
             }
         } catch (SQLException e) {
             logger.error("Error checking comment existence for ID {}: {}", commentId, e.getMessage());
@@ -54,6 +52,22 @@ public class InteractionDAO {
     }
 
     /**
+     * NEW: Option 22 - Unlike Post
+     */
+    public boolean unlikePost(int userId, int postId) {
+        String sql = "DELETE FROM likes WHERE user_id = ? AND post_id = ?";
+        try (Connection conn = ConnectionFactory.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, userId);
+            pstmt.setInt(2, postId);
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            logger.error("Error unliking post: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
      * Option 9: Add Comment + Trigger Notification
      */
     public boolean addComment(int userId, int postId, String content) {
@@ -79,40 +93,10 @@ public class InteractionDAO {
     }
 
     /**
-     * Internal Helper: Creates the notification entry
+     * NEW: Option 23 - Fetch all comments for a post thread
+     * Used by displayAllComments in Service
      */
-    private void createNotification(int targetUserId, String message) {
-        String sql = "INSERT INTO notifications (user_id, message) VALUES (?, ?)";
-        try (Connection conn = ConnectionFactory.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, targetUserId);
-            pstmt.setString(2, message);
-            pstmt.executeUpdate();
-        } catch (SQLException e) { 
-            logger.error("Error creating notification: {}", e.getMessage()); 
-        }
-    }
-
-    /**
-     * Internal Helper: Finds who to notify
-     */
-    private int getPostOwnerId(int postId) {
-        String sql = "SELECT user_id FROM posts WHERE post_id = ?";
-        try (Connection conn = ConnectionFactory.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, postId);
-            ResultSet rs = pstmt.executeQuery();
-            if (rs.next()) return rs.getInt("user_id");
-        } catch (SQLException e) { 
-            logger.error("Error fetching post owner: {}", e.getMessage()); 
-        }
-        return -1;
-    }
-
-    /**
-     * Option 2: Fetch Comments for Feed
-     */
-    public List<Comment> getCommentsByPostId(int postId) {
+    public List<Comment> getAllCommentsForPost(int postId) {
         List<Comment> comments = new ArrayList<>();
         String sql = "SELECT c.*, u.username FROM comments c " +
                      "JOIN users u ON c.user_id = u.id " +
@@ -122,17 +106,17 @@ public class InteractionDAO {
             pstmt.setInt(1, postId);
             ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {
-                Comment comment = new Comment();
-                comment.setCommentId(rs.getInt("comment_id")); 
-                comment.setPostId(rs.getInt("post_id"));
-                comment.setUserId(rs.getInt("user_id"));
-                comment.setContent(rs.getString("content"));
-                comment.setCreatedAt(rs.getTimestamp("created_at"));
-                comment.setUsername(rs.getString("username")); 
-                comments.add(comment);
+                Comment c = new Comment();
+                c.setCommentId(rs.getInt("comment_id"));
+                c.setPostId(rs.getInt("post_id"));
+                c.setUserId(rs.getInt("user_id"));
+                c.setContent(rs.getString("content"));
+                c.setCreatedAt(rs.getTimestamp("created_at"));
+                c.setUsername(rs.getString("username"));
+                comments.add(c);
             }
-        } catch (SQLException e) { 
-            logger.error("Error fetching comments for post {}: {}", postId, e.getMessage()); 
+        } catch (SQLException e) {
+            logger.error("Error fetching comments for post {}: {}", postId, e.getMessage());
         }
         return comments;
     }
@@ -151,5 +135,32 @@ public class InteractionDAO {
             logger.error("SQL Error in deleteComment: {}", e.getMessage()); 
             return false; 
         }
+    }
+
+    // --- INTERNAL HELPERS ---
+
+    private void createNotification(int targetUserId, String message) {
+        String sql = "INSERT INTO notifications (user_id, message) VALUES (?, ?)";
+        try (Connection conn = ConnectionFactory.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, targetUserId);
+            pstmt.setString(2, message);
+            pstmt.executeUpdate();
+        } catch (SQLException e) { 
+            logger.error("Error creating notification: {}", e.getMessage()); 
+        }
+    }
+
+    private int getPostOwnerId(int postId) {
+        String sql = "SELECT user_id FROM posts WHERE post_id = ?";
+        try (Connection conn = ConnectionFactory.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, postId);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) return rs.getInt("user_id");
+        } catch (SQLException e) { 
+            logger.error("Error fetching post owner: {}", e.getMessage()); 
+        }
+        return -1;
     }
 }

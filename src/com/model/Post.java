@@ -5,21 +5,43 @@ import java.sql.Timestamp;
 public class Post {
     private int postId;
     private int userId;
-    private String username; // Added to show who wrote the post in the feed
+    private String username; 
     private String content;
-    private int likes;       // Added to track popularity
+    private int likes;       
     private Timestamp createdAt;
+    private String postType; // Values: "STANDARD", "ANNOUNCEMENT", or "PROMOTION"
 
-    // Default Constructor
-    public Post() {}
+    /**
+     * 1. Default Constructor
+     * Required by JDBC for ResultSets and generic object instantiation.
+     */
+    public Post() {
+        this.postType = "STANDARD"; 
+    }
 
-    // Constructor for creating a new post
+    /**
+     * 2. Standard Constructor
+     * Used for basic posts where type isn't specified (defaults to STANDARD).
+     */
     public Post(int userId, String content) {
         this.userId = userId;
         this.content = content;
+        this.postType = "STANDARD";
     }
 
-    // Getters and Setters
+    /**
+     * 3. Business Constructor
+     * Specifically used by PostService.postBusinessUpdate to clear red marks.
+     */
+    public Post(int userId, String content, String postType) {
+        this.userId = userId;
+        this.content = content;
+        this.postType = postType;
+    }
+
+    // --- Getters and Setters ---
+    // These must exist so the DAO and Service can access the private fields
+
     public int getPostId() { return postId; }
     public void setPostId(int postId) { this.postId = postId; }
 
@@ -37,4 +59,18 @@ public class Post {
 
     public Timestamp getCreatedAt() { return createdAt; }
     public void setCreatedAt(Timestamp createdAt) { this.createdAt = createdAt; }
+
+    /**
+     * FIXED: getPostType() method
+     */
+    public String getPostType() { 
+        return postType; 
+    }
+
+    /**
+     * FIXED: setPostType() method
+     */
+    public void setPostType(String postType) { 
+        this.postType = postType; 
+    }
 }
