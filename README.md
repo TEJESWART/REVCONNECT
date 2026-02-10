@@ -61,6 +61,42 @@ The project follows a modular, layered approach to ensure separation of concerns
 
 ## 📂 Project Structure
 
+
+REVCONNECT
+├── src/
+│   ├── com.controller/
+│   │   └── App.java                # Main entry point with dynamic Business/Personal menus
+│   ├── com.dao/                    # Data Access Objects (JDBC & SQL Logic)
+│   │   ├── InteractionDAO.java     # Handles Likes and Comments persistence
+│   │   ├── NetworkDAO.java         # Handles Follow/Unfollow relationships
+│   │   ├── PostDAO.java            # Manages post_type (Promotion/Announcement) & global feeds
+│   │   └── UserDAO.java            # User CRUD including Business Profile data
+│   ├── com.model/                  # Domain Entities (POJOs)
+│   │   ├── Comment.java            # Comment entity
+│   │   ├── Likes.java              # Like entity
+│   │   ├── Post.java               # Post entity (with 3-parameter constructor)
+│   │   └── User.java               # User entity (with getId/getUserId aliasing)
+│   ├── com.service/                # Business Logic Layer (The "Brain")
+│   │   ├── AuthService.java        # Handles registration flows for Business/Personal
+│   │   ├── InteractionService.java # Logic for validating likes and comments
+│   │   ├── NetworkService.java     # Social graph logic and user suggestions
+│   │   ├── NotificationService.java# Alert management logic
+│   │   └── PostService.java        # Validates business posts and renders feed borders
+│   ├── com.util/
+│   │   └── ConnectionFactory.java  # Centralized JDBC connection management
+│   └── log4j2.xml                  # Logger configuration
+├── test/                           # Automated Testing Suite (JUnit 5)
+│   ├── com.model/
+│   │   └── UserTest.java           # Verifies data encapsulation and ID aliasing
+│   └── com.service/
+│       ├── AllTestsSuite.java      # Master Suite for project-wide validation
+│       ├── AuthServiceTest.java    # Authentication logic tests
+│       ├── InteractionServiceTest.java # Social interaction validation tests
+│      
+├── pom.xml                         # Maven project configuration and dependencies
+├── README.md                       # Latest project documentation
+└── schema.sql                      # Database schema (includes post_type and business cols)
+
 ```text
 REVCONNECT
 ├── src/
